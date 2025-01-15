@@ -6,25 +6,27 @@ package main
 //usar go get github.com/gorilla/mux
 //Se usa similar que con net nativo (es decir usan w http.ResponseWriter, r *http.Request )
 import (
-	"encoding/json"
-	"fmt"
 	"log"
 	"net/http"
 	"time"
 
+	"github.com/IgnacioBO/gocourse_web/internal/user"
 	"github.com/gorilla/mux"
 )
 
 func main() {
 	//Generaremos un router usando gorilla/mux para generar un RUTEO (osea los paths y metodos)
-	//Ruteos lo haremos con gorilla/mux y no de manera nativa
 	router := mux.NewRouter()
 
-	//Ahora setearemos que cuando entremos a users le pege a getusers y a courses a getcousres
-	//Con handlefunc decimos que cuando valla a /users se ejecute la funcion getUsers
+	userEnd := user.MakeEndpoints()
+
+	//Ahora setearemos que cuando le pegemos a /users le pege a las funciones definidas en el controlador user
+	//Con handlefunc decimos que cuando valla a /users se ejecute la funcion correspondiente (userEnd.Create, Get, etc)
 	//Podemos PONER y ESPECIFICAR EL METODO (si se quiere), si intento pegarle con otro no soportado tirará error 405
-	router.HandleFunc("/users", getUsers).Methods("GET", "POST")
-	router.HandleFunc("/courses", getCourses).Methods("GET")
+	router.HandleFunc("/users", userEnd.Create).Methods("POST")
+	router.HandleFunc("/users", userEnd.GetAll).Methods("GET")
+	router.HandleFunc("/users", userEnd.Update).Methods("PATCH")
+	router.HandleFunc("/users", userEnd.Delete).Methods("DELETE")
 
 	//Levantaremos un servidor pero de distina manera a antes
 	//err := http.ListenAndServe(port, nil)
@@ -43,24 +45,5 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	} //Una manera de "ACORTAR todo esto es poner EN UNA LINEA" -> log.Fatal(srv.ListenAndServe())
-
-}
-
-// Dos controladores iniciales
-// w http.ResponseWriter -> Para enviar RESPUESTA AL CLIENTE (body, headers, statsu code)
-// r *http.Request -> Contiende info de la SOLICITUD/REQUEST del cliente (aaceder al metodo hhttp (GET,POST,ETC), paarametros url/query string, body, headers, etc
-// *http.Request siempre como PUNTERO (*) por mas eficiencia, para poder modificar datos y es el estandar del package net/http
-func getUsers(w http.ResponseWriter, r *http.Request) {
-	//Un ejemplo de delay
-	time.Sleep(10 * time.Second)
-	fmt.Println("get /users")
-	//Para responder usaremos el paquete json
-	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
-
-}
-
-func getCourses(w http.ResponseWriter, r *http.Request) {
-	fmt.Println("get /courses")
-	json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 
 }
