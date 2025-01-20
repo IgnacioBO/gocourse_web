@@ -1,5 +1,7 @@
 package user
 
+//**Capa endpoint o controlador**
+
 import (
 	"encoding/json"
 	"fmt"
@@ -34,19 +36,19 @@ type (
 // Funcion que se encargará de hacer los endopints
 // Para eso necesitaremos una struct que se llamara endpoints
 // Esta funcion va a DEVOLVER una struct de Endpoints, estos endpoints son los que vamos a poder utuaizlar en unestro dominio (user)
-func MakeEndpoints() Endpoints {
+func MakeEndpoints(s Service) Endpoints {
 	return Endpoints{
-		Create: makeCreateEndpoint(),
-		Get:    makeGetEndpoint(),
-		Update: makeUpdateEndpoint(),
-		Delete: makeDeleteEndpoint(),
-		GetAll: makeGetAllEndpoint(),
+		Create: makeCreateEndpoint(s),
+		Get:    makeGetEndpoint(s),
+		Update: makeUpdateEndpoint(s),
+		Delete: makeDeleteEndpoint(s),
+		GetAll: makeGetAllEndpoint(s),
 	}
 }
 
 // Este devolver un Controller, retora una función de tipo Controller (que definimos arriba) con esta caractesitica
 // Es privado porque se llamar solo de este dominio
-func makeDeleteEndpoint() Controller {
+func makeDeleteEndpoint(s Service) Controller {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("delete user")
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
@@ -56,7 +58,7 @@ func makeDeleteEndpoint() Controller {
 // w http.ResponseWriter -> Para enviar RESPUESTA AL CLIENTE (body, headers, statsu code)
 // r *http.Request -> Contiende info de la SOLICITUD/REQUEST del cliente (aaceder al metodo http (GET,POST,ETC), paarametros url/query string, body, headers, etc
 // *http.Request siempre como PUNTERO (*) por mas eficiencia, para poder modificar datos y es el estandar del package net/http
-func makeCreateEndpoint() Controller {
+func makeCreateEndpoint(s Service) Controller {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("create user")
 
@@ -86,24 +88,33 @@ func makeCreateEndpoint() Controller {
 		fmt.Println(reqStruct)
 		reqStrucEnJson, _ := json.MarshalIndent(reqStruct, "", " ")
 		fmt.Println(string(reqStrucEnJson))
+
+		//Usaremos la s recibida como parametro (de la capa Service y usaremos el metodo CREATE con lo que debe recibir)
+		err = s.Create(reqStruct.FirstName, reqStruct.LastName, reqStruct.Email, reqStruct.Phone)
+		if err != nil {
+			w.WriteHeader(400)
+			json.NewEncoder(w).Encode(ErrorResponse{err.Error()}) //Aqui devolvemo el posible erro
+			return
+		}
+
 		//Para responder se usa el paquete json Encode (devolverá en el response(w) un JSON, este JSON será la transformacion del struct en json usando la funcion Encode)
 		json.NewEncoder(w).Encode(reqStruct)
 	}
 }
 
-func makeUpdateEndpoint() Controller {
+func makeUpdateEndpoint(s Service) Controller {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("update user")
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 	}
 }
-func makeGetEndpoint() Controller {
+func makeGetEndpoint(s Service) Controller {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("get user")
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})
 	}
 }
-func makeGetAllEndpoint() Controller {
+func makeGetAllEndpoint(s Service) Controller {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("getall user")
 		json.NewEncoder(w).Encode(map[string]bool{"ok": true})

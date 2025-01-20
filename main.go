@@ -18,15 +18,18 @@ func main() {
 	//Generaremos un router usando gorilla/mux para generar un RUTEO (osea los paths y metodos)
 	router := mux.NewRouter()
 
-	userEnd := user.MakeEndpoints()
+	//Crearemos un objeto de tipo servicio para pasarselo a la capa enpdoint
+	userService := user.NewService()
+	//Crearemo un objeto de tipo endpoint y le pasamos el objeto creado
+	userEndpoint := user.MakeEndpoints(userService)
 
 	//Ahora setearemos que cuando le pegemos a /users le pege a las funciones definidas en el controlador user
 	//Con handlefunc decimos que cuando valla a /users se ejecute la funcion correspondiente (userEnd.Create, Get, etc)
 	//Podemos PONER y ESPECIFICAR EL METODO (si se quiere), si intento pegarle con otro no soportado tirará error 405
-	router.HandleFunc("/users", userEnd.Create).Methods("POST")
-	router.HandleFunc("/users", userEnd.GetAll).Methods("GET")
-	router.HandleFunc("/users", userEnd.Update).Methods("PATCH")
-	router.HandleFunc("/users", userEnd.Delete).Methods("DELETE")
+	router.HandleFunc("/users", userEndpoint.Create).Methods("POST")
+	router.HandleFunc("/users", userEndpoint.GetAll).Methods("GET")
+	router.HandleFunc("/users", userEndpoint.Update).Methods("PATCH")
+	router.HandleFunc("/users", userEndpoint.Delete).Methods("DELETE")
 
 	//Levantaremos un servidor pero de distina manera a antes
 	//err := http.ListenAndServe(port, nil)
