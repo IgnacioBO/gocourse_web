@@ -11,7 +11,7 @@ import "log"
 //Aqui definiremos lo metodos que las struct deberan tener
 type Service interface {
 	Create(firstName, lastName, email, phone string) (*User, error) //Metodo que recibira datos de creacion y devolvera un error (y la entidad User)
-	GetAll() ([]User, error)
+	GetAll(filtros Filtros) ([]User, error)                         //Le agregamos filtros (con el struct filtro sque creamos)
 	Get(id string) (*User, error)
 	Delete(id string) error
 	Update(id string, firstName, lastName, email, phone *string) error
@@ -35,6 +35,12 @@ func NewService(log *log.Logger, repo Repository) Service {
 	}
 }
 
+//Ahora crearemos esta stuct que llamaremos Filters o Filtro que servira para filtrar en lso GET
+type Filtros struct {
+	FirstName string
+	LastName  string
+}
+
 //Crearemos un metodo Create que será de la struct service (OJO NO CONFUNDIR CON EL INTERFACE)
 //Aqui crear un USER usando el repositry (s.repo) y usando un (del domain)
 //Devolvera un User (para devolverlo al cliente por api) y un errorr
@@ -55,10 +61,10 @@ func (s service) Create(firstName, lastName, email, phone string) (*User, error)
 	return &usuarioNuevo, nil
 }
 
-func (s service) GetAll() ([]User, error) {
+func (s service) GetAll(filtros Filtros) ([]User, error) {
 	s.log.Println("GetAll users service")
 
-	allUsers, err := s.repo.GetAll()
+	allUsers, err := s.repo.GetAll(filtros)
 	if err != nil {
 		return nil, err
 	}

@@ -3,6 +3,7 @@ package user
 import (
 	"fmt"
 	"log"
+	"strings"
 
 	"github.com/google/uuid"
 	"gorm.io/gorm"
@@ -13,8 +14,8 @@ import (
 
 // Generaremos una interface
 type Repository interface {
-	Create(user *User) error //Metodo create y recibe un Puntero de un User (Struct creado en el de domain.go, que tiene los campso de BBDD en gorn)
-	GetAll() ([]User, error)
+	Create(user *User) error                //Metodo create y recibe un Puntero de un User (Struct creado en el de domain.go, que tiene los campso de BBDD en gorn)
+	GetAll(filtros Filtros) ([]User, error) //Le agregamos que getAll reciba filtros
 	Get(id string) (*User, error)
 	Delete(id string) error
 	Update(id string, firstName *string, lastName *string, email *string, phone *string) error //Campos por separado y como punteros (porque si no lo pongo puntero, si llega un string vacio TENDRA valor y actualizará VACIO)
@@ -57,7 +58,7 @@ func (r *repo) Create(user *User) error {
 	return nil
 }
 
-func (r *repo) GetAll() ([]User, error) {
+func (r *repo) GetAll(filtros Filtros) ([]User, error) {
 	r.log.Println("repository GetAll:")
 
 	var allUsers []User //Variable que almacenará los usuarios obtenidos
@@ -65,7 +66,15 @@ func (r *repo) GetAll() ([]User, error) {
 	//yo lo hice asi: result := r.db.Find(&allUsers)
 	//Desde objeto repo (r) obtenemso bbdd y usamos model para indicar el "modelo" a usar (strct)
 	//Order para indicar como queremo devolver (order by) y el Find nos pobla/llkena la estructura con los datos devueltor por la bbdd
-	result := r.db.Model(&allUsers).Order("created_at desc").Find(&allUsers)
+	//ORIGINAL SIN FILTOS: result := r.db.Model(&allUsers).Order("created_at desc").Find(&allUsers)
+	//AHora se cambiara y le podnremos filtros
+
+	//Primero especificamos el modelo y nos devovlera un gorm.DB* con el modelo listo
+	tx := r.db.Model(&allUsers)
+	//Luego a esta db con el modelo le aplicaremos filtros
+	tx = aplicarFiltros(tx, filtros)
+	//Luego le ponemos un order by y el find para buscar
+	result := tx.Order("created_at desc").Find(&allUsers)
 	if result.Error != nil {
 		r.log.Println(result.Error)
 		return nil, result.Error
@@ -149,4 +158,24 @@ func (r *repo) Update(id string, firstName *string, lastName *string, email *str
 	r.log.Printf("user updated with id: %s, rows affected: %d\n", id, result.RowsAffected)
 
 	return nil
+}
+
+// Funcion que servira para filtrar, recibe la base da datos (tx) y el struct de filtros
+func aplicarFiltros(tx *gorm.DB, filtros Filtros) *gorm.DB {
+	//Si el filtro es distinto de blanco (osea VIENE con filtro), le agregaremos un fultros
+	if filtros.FirstName != "" {
+		//Primero se hace lowervase para luegos buscar tambein en lowercase en la bbdd
+		//Se usea %%%s%% para que termine al final como "%%s%%", porque se usara LIKE y el LIKE con %% permite que sea una especie de "INCLUDE
+		//Osea buscar que la apalabra que se busca puede estar al principio, al medio o al final de una palabra
+		filtros.FirstName = fmt.Sprintf("%%%s%%", strings.ToLower(filtros.FirstName))
+		//El Where filtra el valor que le paso, osea el Where permite AGREGAR un Where a la consulta
+		tx = tx.Where("lower(first_name) like ?", filtros.FirstName)
+	}
+
+	if filtros.LastName != "" {
+		filtros.LastName = fmt.Sprintf("%%%s%%", strings.ToLower(filtros.LastName))
+		tx = tx.Where("lower(last_name) like ?", filtros.LastName)
+	}
+	return tx
+
 }

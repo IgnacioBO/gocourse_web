@@ -39,13 +39,19 @@ type (
 		Phone     *string `json:"phone"`
 	}
 
-	ErrorResponse struct {
-		Error string `json:"error"`
-	}
-
 	MsgResponse struct {
 		ID  string `json:"id"`
 		Msg string `json:"msg"`
+	}
+
+	//Este sera el "response" generico, para tener una estructura
+	//El status SIEMPRE sera devuelto
+	//El campo data SOLO aparecera cuando esta todo OK y dentro ira la estructura
+	//El campo error SOLO aparecera cuando hay error
+	Response struct {
+		Status int         `json:"status"`
+		Data   interface{} `json:"data,omitempty"` //omitempty, asi cuando queremos enviamos la data cuando eta ok y cuando este eror se envie el campo error
+		Err    string      `json:"error,omitempty"`
 	}
 )
 
@@ -75,11 +81,14 @@ func makeDeleteEndpoint(s Service) Controller {
 		err := s.Delete(id)
 		if err != nil {
 			w.WriteHeader(404)
-			json.NewEncoder(w).Encode(ErrorResponse{err.Error()}) //Aqui devolvemo el posible erro
+			json.NewEncoder(w).Encode(&Response{Status: 404, Err: err.Error()}) //Aqui devolvemo el posible erro
 			return
 		}
 
-		json.NewEncoder(w).Encode(map[string]string{"id": id, "msg": "success"})
+		//Aqui le pasamos Response como struct para ahorrar memoria
+		//Con puntero (&Response): Encode accede al struct original a través de la dirección de memoria. Esto evita copiar los datos.
+		//Sin puntero (Response): Encode recibe una copia del struct completo, lo que puede ocupar más memoria si el struct es muy grande.
+		json.NewEncoder(w).Encode(&Response{Status: 200, Data: map[string]string{"id": id, "msg": "success"}})
 	}
 }
 
@@ -99,19 +108,21 @@ func makeCreateEndpoint(s Service) Controller {
 			//w.WriteHeader devuelve en el repsonse el CODE que se le indica
 			w.WriteHeader(400)
 			//Enviaremos la repsuesta con encode y creamos un Sruct ErrorRespone (Creado antes) con un texto
-			json.NewEncoder(w).Encode(ErrorResponse{"invalid request format"})
+			json.NewEncoder(w).Encode(&Response{Status: 400, Err: "invalid request format"})
+
+			json.NewEncoder(w).Encode(&Response{Status: 400, Err: "invalid request format"})
 			return
 		}
 
 		//Validaciones
 		if reqStruct.FirstName == "" {
 			w.WriteHeader(400)
-			json.NewEncoder(w).Encode(ErrorResponse{"first_name is required"})
+			json.NewEncoder(w).Encode(&Response{Status: 400, Err: "first_name is required"})
 			return
 		}
 		if reqStruct.LastName == "" {
 			w.WriteHeader(400)
-			json.NewEncoder(w).Encode(ErrorResponse{"last_name is required"})
+			json.NewEncoder(w).Encode(&Response{Status: 400, Err: "last_name is required"})
 			return
 		}
 		fmt.Println(reqStruct)
@@ -122,14 +133,14 @@ func makeCreateEndpoint(s Service) Controller {
 		usuarioNuevo, err := s.Create(reqStruct.FirstName, reqStruct.LastName, reqStruct.Email, reqStruct.Phone)
 		if err != nil {
 			w.WriteHeader(400)
-			json.NewEncoder(w).Encode(ErrorResponse{err.Error()}) //Aqui devolvemo el posible erro
+			json.NewEncoder(w).Encode(&Response{Status: 400, Err: err.Error()}) //Aqui devolvemo el posible erro
 			return
 		}
 
 		//Para responder se usa el paquete json Encode (devolverá en el response(w) un JSON, este JSON será la transformacion del struct en json usando la funcion Encode)
 		//Antes devolviemoas el reqStruct (que ERA LO MISMO QUE ENVIA EL CLIENTE)
 		//Pero ahora devolveremos usuarioNuevo que seria el struct User (del dominio) que tiene como se inserto a la BBDD
-		json.NewEncoder(w).Encode(usuarioNuevo)
+		json.NewEncoder(w).Encode(&Response{Status: 200, Data: usuarioNuevo})
 	}
 }
 
@@ -144,7 +155,7 @@ func makeUpdateEndpoint(s Service) Controller {
 		err := json.NewDecoder(r.Body).Decode(&reqStruct)
 		if err != nil {
 			w.WriteHeader(400)
-			json.NewEncoder(w).Encode(ErrorResponse{"invalid request format"})
+			json.NewEncoder(w).Encode(&Response{Status: 400, Err: "invalid request format"})
 			return
 		}
 
@@ -154,13 +165,13 @@ func makeUpdateEndpoint(s Service) Controller {
 		//OSea se permite NO ENVIAR ESTOS CAMPOS, PERO NO SE PERMITE ENVIARLSO VACIOS
 		if reqStruct.FirstName != nil && *reqStruct.FirstName == "" {
 			w.WriteHeader(400)
-			json.NewEncoder(w).Encode(ErrorResponse{"first_name can't be empty"})
+			json.NewEncoder(w).Encode(&Response{Status: 400, Err: "first_name can't be empty"})
 			return
 		}
 
 		if reqStruct.LastName != nil && *reqStruct.LastName == "" {
 			w.WriteHeader(400)
-			json.NewEncoder(w).Encode(ErrorResponse{"last_name can't be empty"})
+			json.NewEncoder(w).Encode(&Response{Status: 400, Err: "last_name can't be empty"})
 			return
 		}
 		variablesPath := mux.Vars(r)
@@ -169,10 +180,10 @@ func makeUpdateEndpoint(s Service) Controller {
 		err = s.Update(id, reqStruct.FirstName, reqStruct.LastName, reqStruct.Email, reqStruct.Phone)
 		if err != nil {
 			w.WriteHeader(404)
-			json.NewEncoder(w).Encode(ErrorResponse{err.Error()}) //Aqui devolvemo el posible erro
+			json.NewEncoder(w).Encode(Response{Status: 404, Err: err.Error()}) //Aqui devolvemo el posible erro
 			return
 		}
-		json.NewEncoder(w).Encode(map[string]string{"id": id, "msg": "success"})
+		json.NewEncoder(w).Encode(&Response{Status: 200, Data: map[string]string{"id": id, "msg": "success"}})
 
 	}
 }
@@ -191,16 +202,16 @@ func makeGetEndpoint(s Service) Controller {
 		if err != nil {
 			if usuario == nil { //Si usuario es vacio da 404
 				w.WriteHeader(404)
-				json.NewEncoder(w).Encode(ErrorResponse{err.Error() + ". user with id " + id + " doesn't exist"}) //Aqui devolvemo el posible erro
+				json.NewEncoder(w).Encode(&Response{Status: 404, Err: err.Error() + ". user with id " + id + " doesn't exist"}) //Aqui devolvemo el posible erro
 				return
 			} else {
 				w.WriteHeader(400)
-				json.NewEncoder(w).Encode(ErrorResponse{err.Error()}) //Aqui devolvemo el posible erro
+				json.NewEncoder(w).Encode(&Response{Status: 400, Err: err.Error()}) //Aqui devolvemo el posible erro
 				return
 			}
 		}
 
-		json.NewEncoder(w).Encode(usuario)
+		json.NewEncoder(w).Encode(&Response{Status: 200, Data: usuario})
 
 	}
 }
@@ -209,13 +220,22 @@ func makeGetAllEndpoint(s Service) Controller {
 		fmt.Println("getall user")
 		w.Header().Add("Content-Type", "application/json; charset=utf-8") //Linea miea para que se determine que respondera un json
 
-		allUsers, err := s.GetAll()
+		//URL.Query() que viene del request
+		//Query() devielve un objeto que permite acceder a los parametros d la url (...?campo=123&campo2=hola)
+		variablesURL := r.URL.Query()
+		//Luego con podemos acceder a los parametos y guardarlos en el struct Filtro (creado en service.go)
+		filtros := Filtros{
+			FirstName: variablesURL.Get("first_name"),
+			LastName:  variablesURL.Get("last_name"),
+		}
+
+		allUsers, err := s.GetAll(filtros)
 		if err != nil {
 			w.WriteHeader(400)
-			json.NewEncoder(w).Encode(ErrorResponse{err.Error()}) //Aqui devolvemo el posible erro
+			json.NewEncoder(w).Encode(&Response{Status: 400, Err: err.Error()}) //Aqui devolvemo el posible erro
 			return
 		}
 
-		json.NewEncoder(w).Encode(allUsers)
+		json.NewEncoder(w).Encode(&Response{Status: 200, Data: allUsers})
 	}
 }
