@@ -1,0 +1,28 @@
+	1)
+    
+    En el main, puede llamarse a MUX y entregar el id al endpoint, asi no usa package externos internal/endpoint.go:
+    //En el get haremos una funcion que extrae el id con mux y luego se po pasamos a endpoit.go al GET de este
+	router.HandleFunc("/users/{id}", func(w http.ResponseWriter, r *http.Request) {
+		//Con mux.Vars obtenemos el valor del path que corresponde a {id} usando MUX
+		id := mux.Vars(r)["id"]
+
+		// Le pasamos el ID al contexto y luego el contexto al REQUEST (r)
+		contexto := context.WithValue(r.Context(), "id", id)
+		r = r.WithContext(contexto)
+
+		//AHORA LLAMAMOS al Handler de endpoint.go
+		userEndpoint.Get(w, r)
+
+	}).Methods("GET")
+
+    despues en endpoin.go se ppuede obtener asi:
+  func makeGetEndpoint(s Service) Controller {
+	return func(w http.ResponseWriter, r *http.Request) {
+		fmt.Println("get user")
+		w.Header().Add("Content-Type", "application/json; charset=utf-8") //Linea miea para que se determine que respondera un json
+
+		id, ok := r.Context().Value("id").(string)
+    }
+  }
+
+    2)
