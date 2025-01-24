@@ -11,7 +11,7 @@ import (
 	"time"
 
 	"github.com/IgnacioBO/gocourse_web/internal/user"
-	"github.com/IgnacioBO/gocourse_web/pkg/bootsrap"
+	"github.com/IgnacioBO/gocourse_web/pkg/bootstrap"
 	"github.com/gorilla/mux" //Manejar ruteo facilmente (paths y metodos)
 	"github.com/joho/godotenv"
 	//Driver mysql para gorm
@@ -24,7 +24,7 @@ func main() {
 
 	//Definiremos un logger
 	//Creamos un script bootsrap.go que INICIALIZA el log
-	l := bootsrap.InitLogger()
+	l := bootstrap.InitLogger()
 
 	//Con godotenv cargamos las variables de entorn denrto de .env para usarlas en el DSN
 	//Al usar godotenv.Load() cargar autoamticametne los valores en archivo .env de root
@@ -34,7 +34,7 @@ func main() {
 
 	//DSN (Data Source Name) es una cadena de conexion de BBDD (tipo, servidor, nombre bbdd, user, pass)
 	//Creamos un script bootsrap.go que INICIALIZA la conexion usando gorm y varaibles de entoero
-	db, err := bootsrap.DBConnection()
+	db, err := bootstrap.DBConnection()
 	if err != nil {
 		log.Fatal(err)
 	}
