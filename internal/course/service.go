@@ -81,6 +81,7 @@ func (s service) GetAll(filtros Filtros, offset, limit int) ([]Course, error) {
 	if err != nil {
 		return nil, err
 	}
+	//OJo aqui devuelve el start_data y end_date con horario loca (osea -3, aqui podriamos hacer algo para pasarlo a UTC)
 	return allCourses, nil
 }
 
@@ -103,7 +104,7 @@ func (s service) Delete(id string) error {
 
 func (s service) Update(id string, name *string, startDate, endDate *string) error {
 	s.log.Println("Update course service")
-	var startDateParsed *time.Time //Se crea un puntero *time.Time, ESTOS se crean en NIL. Si startDate y/o endDate tienen datos ENTRAN EN LOS IF de abajo y el punteor agarra un valor y direccion
+	var startDateParsed *time.Time //Se crea un puntero *time.Time, ESTOS se crean en NIL. Si startDate y/o endDate tienen datos ENTRAN EN LOS IF de abajo y el puntero agarra un valor y direccion. SI NO QUEDAN EN NIL
 	var endDateParsed *time.Time
 	var err error
 

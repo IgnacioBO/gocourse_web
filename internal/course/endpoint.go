@@ -40,10 +40,6 @@ type (
 		Msg string `json:"msg"`
 	}
 
-	//Este sera el "response" generico, para tener una estructura
-	//El status SIEMPRE sera devuelto
-	//El campo data SOLO aparecera cuando esta todo OK y dentro ira la estructura
-	//El campo error SOLO aparecera cuando hay error
 	Response struct {
 		Status int         `json:"status"`
 		Data   interface{} `json:"data,omitempty"` //omitempty, asi cuando queremos enviamos la data cuando eta ok y cuando este eror se envie el campo error
@@ -89,9 +85,6 @@ func makeDeleteEndpoint(s Service) Controller {
 	}
 }
 
-// w http.ResponseWriter -> Para enviar RESPUESTA AL CLIENTE (body, headers, statsu code)
-// r *http.Request -> Contiende info de la SOLICITUD/REQUEST del cliente (aaceder al metodo http (GET,POST,ETC), paarametros url/query string, body, headers, etc
-// *http.Request siempre como PUNTERO (*) por mas eficiencia, para poder modificar datos y es el estandar del package net/http
 func makeCreateEndpoint(s Service) Controller {
 	return func(w http.ResponseWriter, r *http.Request) {
 		fmt.Println("create course")
@@ -138,9 +131,6 @@ func makeCreateEndpoint(s Service) Controller {
 			return
 		}
 
-		//Para responder se usa el paquete json Encode (devolverá en el response(w) un JSON, este JSON será la transformacion del struct en json usando la funcion Encode)
-		//Antes devolviemoas el reqStruct (que ERA LO MISMO QUE ENVIA EL CLIENTE)
-		//Pero ahora devolveremos usuarioNuevo que seria el struct Course (del dominio) que tiene como se inserto a la BBDD
 		json.NewEncoder(w).Encode(&Response{Status: 200, Data: usuarioNuevo})
 	}
 }
@@ -160,13 +150,20 @@ func makeUpdateEndpoint(s Service) Controller {
 			return
 		}
 
-		//Validaciones para que sean reqierod
-		//Si first name es disinto de nil (osea el puntero NO VIENE VACIO) y le pone "first_name" como vacio (osea el cliene pone first_name = "") da error
-		//PERO SI EL CLIENTE NO ENVIA first_namem reqStruct.Firstname sera igual a NIL! entonces no entra
-		//OSea se permite NO ENVIAR ESTOS CAMPOS, PERO NO SE PERMITE ENVIARLSO VACIOS
 		if reqStruct.Name != nil && *reqStruct.Name == "" {
 			w.WriteHeader(400)
 			json.NewEncoder(w).Encode(&Response{Status: 400, Err: "name can't be empty"})
+			return
+		}
+		if reqStruct.StartDate != nil && *reqStruct.StartDate == "" {
+			w.WriteHeader(400)
+			json.NewEncoder(w).Encode(&Response{Status: 400, Err: "start_date can't be empty"})
+			return
+		}
+
+		if reqStruct.EndDate != nil && *reqStruct.EndDate == "" {
+			w.WriteHeader(400)
+			json.NewEncoder(w).Encode(&Response{Status: 400, Err: "end_date can't be empty"})
 			return
 		}
 
