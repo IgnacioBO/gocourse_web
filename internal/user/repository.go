@@ -14,8 +14,8 @@ import (
 
 // Generaremos una interface
 type Repository interface {
-	Create(user *User) error                //Metodo create y recibe un Puntero de un User (Struct creado en el de domain.go, que tiene los campso de BBDD en gorn)
-	GetAll(filtros Filtros) ([]User, error) //Le agregamos que getAll reciba filtros
+	Create(user *User) error                                   //Metodo create y recibe un Puntero de un User (Struct creado en el de domain.go, que tiene los campso de BBDD en gorn)
+	GetAll(filtros Filtros, offset, limit int) ([]User, error) //Le agregamos que getAll reciba filtros
 	Get(id string) (*User, error)
 	Delete(id string) error
 	Update(id string, firstName *string, lastName *string, email *string, phone *string) error //Campos por separado y como punteros (porque si no lo pongo puntero, si llega un string vacio TENDRA valor y actualizará VACIO)
@@ -59,7 +59,7 @@ func (r *repo) Create(user *User) error {
 	return nil
 }
 
-func (r *repo) GetAll(filtros Filtros) ([]User, error) {
+func (r *repo) GetAll(filtros Filtros, offset, limit int) ([]User, error) {
 	r.log.Println("repository GetAll:")
 
 	var allUsers []User //Variable que almacenará los usuarios obtenidos
@@ -74,6 +74,8 @@ func (r *repo) GetAll(filtros Filtros) ([]User, error) {
 	tx := r.db.Model(&allUsers)
 	//Luego a esta db con el modelo le aplicaremos filtros
 	tx = aplicarFiltros(tx, filtros)
+	//AGREGAMOS NUEVO QUE PEMRITE CALCULAR EL OFFSET Y LIMT // offset es a parti de que resultado se muestra, por ejemplo si es 4, se parte del 5* y limit es cantidad desde ese offset
+	tx = tx.Limit(limit).Offset(offset)
 	//Luego le ponemos un order by y el find para buscar
 	result := tx.Order("created_at desc").Find(&allUsers)
 	if result.Error != nil {

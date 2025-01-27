@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strconv"
 
 	"github.com/IgnacioBO/gocourse_web/pkg/meta"
 	"github.com/gorilla/mux"
@@ -230,6 +231,10 @@ func makeGetAllEndpoint(s Service) Controller {
 			FirstName: variablesURL.Get("first_name"),
 			LastName:  variablesURL.Get("last_name"),
 		}
+		//Ahora obtendremos el limit y la pagina desde los parametros
+		limit, _ := strconv.Atoi(variablesURL.Get("limit"))
+		page, _ := strconv.Atoi(variablesURL.Get("page"))
+
 		//Ahora llamaremos al Count del service que creamos (antes de hacer la consulta completa)
 		cantidad, err := s.Count(filtros)
 		if err != nil {
@@ -238,9 +243,9 @@ func makeGetAllEndpoint(s Service) Controller {
 			return
 		}
 		//Luego crearemos un meta y le agregaremos la cantidad que consultamos, luego el meta lo ageregaremos a la respuesta
-		meta, err := meta.New(cantidad)
+		meta, err := meta.New(page, limit, cantidad)
 
-		allUsers, err := s.GetAll(filtros)
+		allUsers, err := s.GetAll(filtros, meta.Offset(), meta.Limit()) //GetAll recibe el offset (desde q resultado mostrar) y el limit (cuantos desde el offset)
 		if err != nil {
 			w.WriteHeader(400)
 			json.NewEncoder(w).Encode(&Response{Status: 400, Err: err.Error()}) //Aqui devolvemo el posible erro
