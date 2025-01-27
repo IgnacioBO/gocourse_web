@@ -3,6 +3,7 @@ package user
 import (
 	"time"
 
+	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -22,4 +23,14 @@ type User struct {
 	CreatedAt time.Time      `json:"-"` // `json:"-"` PARA QUE NO se incluya este campo en las respuestas JSON
 	UpdatedAt time.Time      `json:"-"`
 	DeletedAt gorm.DeletedAt `json:"-"` //Este campo es para que se haga un SOFTDELETE en vez de un hard delete
+}
+
+// Usaremos los hooks de GORM
+// Estos se ejecutaran DE MANERA AUTOAMTICA ANTES DE CADA ACCION, segun corresponda
+// Por ejemplo BeforeCreate SE EJECUTARA SIEMPRE ANTES DE una CRAECION DE USARIO de manera automatica (sin llaamrla)
+func (u *User) BeforeCreate(tx *gorm.DB) (err error) {
+	if u.ID == "" {
+		u.ID = uuid.New().String()
+	}
+	return
 }

@@ -5,7 +5,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/google/uuid"
 	"gorm.io/gorm"
 )
 
@@ -43,9 +42,10 @@ func NewRepo(log *log.Logger, db *gorm.DB) Repository {
 
 func (r *repo) Create(user *User) error {
 	r.log.Println("repository Create:", user)
-	//Aqui craeremos el UUID (pq es la capa repository) del usuario usando el package uuid: go get github.com/google/uuid
+	//Aqui zcraeremos el UUID (pq es la capa repository) del usuario usando el package uuid: go get github.com/google/uuid
 	//Ese UUID se lo asignaremos al campo ID del user recibido
-	user.ID = uuid.New().String()
+	//Ahora usaremos HOOKs de GORN, ahora el domain.go se encargara de hacer el uuid SIEMPRE, antes de un CREATE de manera AUTOMATICA con la funcion "BeforeCreate()"
+	//user.ID = uuid.New().String()
 
 	//Objeto db tiene el metodo Create (de GORM) y le pasamos la entidad
 	result := r.db.Create(user)
