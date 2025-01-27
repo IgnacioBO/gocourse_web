@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"github.com/IgnacioBO/gocourse_web/pkg/meta"
 	"github.com/gorilla/mux"
 )
 
@@ -52,6 +53,7 @@ type (
 		Status int         `json:"status"`
 		Data   interface{} `json:"data,omitempty"` //omitempty, asi cuando queremos enviamos la data cuando eta ok y cuando este eror se envie el campo error
 		Err    string      `json:"error,omitempty"`
+		Meta   *meta.Meta  `json:"meta,omitempty"`
 	}
 )
 
@@ -228,6 +230,15 @@ func makeGetAllEndpoint(s Service) Controller {
 			FirstName: variablesURL.Get("first_name"),
 			LastName:  variablesURL.Get("last_name"),
 		}
+		//Ahora llamaremos al Count del service que creamos (antes de hacer la consulta completa)
+		cantidad, err := s.Count(filtros)
+		if err != nil {
+			w.WriteHeader(500)
+			json.NewEncoder(w).Encode(&Response{Status: 500, Err: err.Error()}) //Aqui devolvemo el posible erro
+			return
+		}
+		//Luego crearemos un meta y le agregaremos la cantidad que consultamos, luego el meta lo ageregaremos a la respuesta
+		meta, err := meta.New(cantidad)
 
 		allUsers, err := s.GetAll(filtros)
 		if err != nil {
@@ -236,6 +247,6 @@ func makeGetAllEndpoint(s Service) Controller {
 			return
 		}
 
-		json.NewEncoder(w).Encode(&Response{Status: 200, Data: allUsers})
+		json.NewEncoder(w).Encode(&Response{Status: 200, Data: allUsers, Meta: meta})
 	}
 }

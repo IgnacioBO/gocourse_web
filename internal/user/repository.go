@@ -19,6 +19,7 @@ type Repository interface {
 	Get(id string) (*User, error)
 	Delete(id string) error
 	Update(id string, firstName *string, lastName *string, email *string, phone *string) error //Campos por separado y como punteros (porque si no lo pongo puntero, si llega un string vacio TENDRA valor y actualizará VACIO)
+	Count(Filtros Filtros) (int, error)                                                        //Servirá para contar cantidad de registrosy recibe los mismo filtros del getall y devolera int(cantidad de registros) y error
 }
 
 // Ahora una struct que hacer referncia de bbdd de GORN
@@ -177,5 +178,22 @@ func aplicarFiltros(tx *gorm.DB, filtros Filtros) *gorm.DB {
 		tx = tx.Where("lower(last_name) like ?", filtros.LastName)
 	}
 	return tx
+}
 
+// Funcion que permitira contar la cantidad de registros devueltos en un get
+func (r *repo) Count(filtros Filtros) (int, error) {
+	var cantidad int64
+	//Creamos un db usando el modelo de user vacio
+	tx := r.db.Model(User{})
+	//Luego le aplicamos filtros (los where)
+	tx = aplicarFiltros(tx, filtros)
+	//Ahora le aplicamos COunt a la base da datos que permite consutlar con filtros y devuelev SOLO LA CANTIADA DE RESUTLADOS y se guardara en &cantidad
+	//Luego se hará la consulta completa en otro metodo
+	//¿Hare doble consulta entonces (pq despues del count debo hacer un select)? SI, pero esto permitira hacer una paginacion, asi preguntar catnidad de resultados primero y luego paginar
+	tx = tx.Count(&cantidad)
+	if tx.Error != nil {
+		return 0, tx.Error
+	}
+
+	return int(cantidad), nil
 }

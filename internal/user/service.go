@@ -15,6 +15,7 @@ type Service interface {
 	Get(id string) (*User, error)
 	Delete(id string) error
 	Update(id string, firstName, lastName, email, phone *string) error
+	Count(Filtros Filtros) (int, error) //Servirá para contar cantidad de registrosy recibe los mismo filtros del getall y devolera int(cantidad de registros) y error
 }
 
 //Ahora crearemos un struct PRIVADA (pq desde afuera accederemoa a traves de Servivce)
@@ -92,4 +93,9 @@ func (s service) Update(id string, firstName, lastName, email, phone *string) er
 	s.log.Println("Update user service")
 	err := s.repo.Update(id, firstName, lastName, email, phone)
 	return err
+}
+
+func (s service) Count(filtros Filtros) (int, error) {
+	s.log.Println("Count users service")
+	return s.repo.Count(filtros)
 }
