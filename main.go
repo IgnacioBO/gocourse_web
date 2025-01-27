@@ -10,7 +10,9 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/IgnacioBO/gocourse_web/internal/course"
 	"github.com/IgnacioBO/gocourse_web/internal/user"
+
 	"github.com/IgnacioBO/gocourse_web/pkg/bootstrap"
 	"github.com/gorilla/mux" //Manejar ruteo facilmente (paths y metodos)
 	"github.com/joho/godotenv"
@@ -54,6 +56,17 @@ func main() {
 	router.HandleFunc("/users/{id}", userEndpoint.Update).Methods("PATCH")  //Usamos {} para especifiar el NOMBRE del paramatro (que se obtiene con MUX dentro de endpoint.go) //Patch es ACT parcial (PUT es completa)
 	router.HandleFunc("/users/{id}", userEndpoint.Delete).Methods("DELETE") //Delete o SoftDelete
 	router.HandleFunc("/users/{id}", userEndpoint.Get).Methods("GET")       //Usamos {} para especifiar el NOMBRE del paramatro (que se obtiene con MUX dentro de endpoint.go)
+
+	//Levantamos **CURSO**
+	courseRepo := course.NewRepo(l, db)
+	courseSerive := course.NewService(l, courseRepo)
+	courseEndpoints := course.MakeEndpoints(courseSerive)
+
+	router.HandleFunc("/courses", courseEndpoints.Create).Methods("POST")
+	router.HandleFunc("/courses", courseEndpoints.GetAll).Methods("GET")
+	router.HandleFunc("/courses/{id}", courseEndpoints.Update).Methods("PATCH")  //Usamos {} para especifiar el NOMBRE del paramatro (que se obtiene con MUX dentro de endpoint.go) //Patch es ACT parcial (PUT es completa)
+	router.HandleFunc("/courses/{id}", courseEndpoints.Delete).Methods("DELETE") //Delete o SoftDelete
+	router.HandleFunc("/courses/{id}", courseEndpoints.Get).Methods("GET")
 
 	//Levantaremos un servidor pero de distina manera a antes
 	//err := http.ListenAndServe(port, nil)
