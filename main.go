@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/IgnacioBO/gocourse_web/internal/course"
+	"github.com/IgnacioBO/gocourse_web/internal/enrollment"
 	"github.com/IgnacioBO/gocourse_web/internal/user"
 
 	"github.com/IgnacioBO/gocourse_web/pkg/bootstrap"
@@ -67,6 +68,13 @@ func main() {
 	router.HandleFunc("/courses/{id}", courseEndpoints.Update).Methods("PATCH")  //Usamos {} para especifiar el NOMBRE del paramatro (que se obtiene con MUX dentro de endpoint.go) //Patch es ACT parcial (PUT es completa)
 	router.HandleFunc("/courses/{id}", courseEndpoints.Delete).Methods("DELETE") //Delete o SoftDelete
 	router.HandleFunc("/courses/{id}", courseEndpoints.Get).Methods("GET")
+
+	//Levantamos **Enrollment**
+	enrollmentRepo := enrollment.NewRepo(l, db)
+	enrollmentSerive := enrollment.NewService(l, userService, courseSerive, enrollmentRepo)
+	enrollmentEndpoints := enrollment.MakeEndpoints(enrollmentSerive)
+
+	router.HandleFunc("/enrollments", enrollmentEndpoints.Create).Methods("POST")
 
 	//Levantaremos un servidor pero de distina manera a antes
 	//err := http.ListenAndServe(port, nil)

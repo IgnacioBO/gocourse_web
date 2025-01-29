@@ -52,6 +52,10 @@ func DBConnection() (*gorm.DB, error) {
 		if err != nil {
 			return nil, err
 		}
+		err = db.AutoMigrate(&domain.Enrollment{})
+		if err != nil {
+			return nil, err
+		}
 
 	}
 
