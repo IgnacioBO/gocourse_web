@@ -5,9 +5,7 @@ import (
 	"log"
 	"os"
 
-	"github.com/IgnacioBO/gocourse_web/internal/course"
-	"github.com/IgnacioBO/gocourse_web/internal/user"
-
+	"github.com/IgnacioBO/gocourse_web/internal/domain"
 	"gorm.io/driver/mysql"
 	"gorm.io/gorm"
 )
@@ -46,11 +44,11 @@ func DBConnection() (*gorm.DB, error) {
 	//Usando automigrate y un struct (en este caso un puntero del struct) me creara la tabla automaticamente
 	//Se hara automgirat soo si esta la varaible de enteorn DB_MIGRATE en true
 	if os.Getenv("DB_MIGRATE") == "true" {
-		err = db.AutoMigrate(&user.User{})
+		err = db.AutoMigrate(&domain.User{})
 		if err != nil {
 			return nil, err
 		}
-		err = db.AutoMigrate(&course.Course{})
+		err = db.AutoMigrate(&domain.Course{})
 		if err != nil {
 			return nil, err
 		}

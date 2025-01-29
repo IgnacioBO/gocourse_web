@@ -4,12 +4,14 @@ import (
 	"log"
 	"strings"
 	"time"
+
+	"github.com/IgnacioBO/gocourse_web/internal/domain"
 )
 
 type Service interface {
-	Create(name, startDate, endDate string) (*Course, error)     //Metodo que recibira datos de creacion y devolvera un error (y la entidad Course)
-	GetAll(filtros Filtros, offset, limit int) ([]Course, error) //Le agregamos filtros (con el struct filtro sque creamos)
-	Get(id string) (*Course, error)
+	Create(name, startDate, endDate string) (*domain.Course, error)     //Metodo que recibira datos de creacion y devolvera un error (y la entidad domain.Course)
+	GetAll(filtros Filtros, offset, limit int) ([]domain.Course, error) //Le agregamos filtros (con el struct filtro sque creamos)
+	Get(id string) (*domain.Course, error)
 	Delete(id string) error
 	Update(id string, name *string, startDate, endDate *string) error
 	Count(Filtros Filtros) (int, error) //Servirá para contar cantidad de registrosy recibe los mismo filtros del getall y devolera int(cantidad de registros) y error
@@ -37,7 +39,7 @@ type Filtros struct {
 	Name string
 }
 
-func (s service) Create(name, startDate, endDate string) (*Course, error) {
+func (s service) Create(name, startDate, endDate string) (*domain.Course, error) {
 	s.log.Println("Create course service")
 
 	//Si tienen texto con un T posterior, por ejemplo 2025-01-27T22:59:09.409Z, se saca
@@ -60,12 +62,12 @@ func (s service) Create(name, startDate, endDate string) (*Course, error) {
 		return nil, err
 	}
 
-	cursoNuevo := Course{
+	cursoNuevo := domain.Course{
 		Name:      name,
 		StartDate: startDateParsed,
 		EndDate:   endDateParsed,
 	}
-	//Le pasamo al repo el Course (del domain.go) a la capa repo a la funcion Create (que recibe puntero)
+	//Le pasamo al repo el domain.Course (del domain.go) a la capa repo a la funcion Create (que recibe puntero)
 	err = s.repo.Create(&cursoNuevo)
 	//Si hay un error (por ejemplo al insertar, se devuelve el error y la capa endpoitn lo maneja con un status code y todo)
 	if err != nil {
@@ -74,7 +76,7 @@ func (s service) Create(name, startDate, endDate string) (*Course, error) {
 	return &cursoNuevo, nil
 }
 
-func (s service) GetAll(filtros Filtros, offset, limit int) ([]Course, error) {
+func (s service) GetAll(filtros Filtros, offset, limit int) ([]domain.Course, error) {
 	s.log.Println("GetAll courses service")
 
 	allCourses, err := s.repo.GetAll(filtros, offset, limit)
@@ -85,7 +87,7 @@ func (s service) GetAll(filtros Filtros, offset, limit int) ([]Course, error) {
 	return allCourses, nil
 }
 
-func (s service) Get(id string) (*Course, error) {
+func (s service) Get(id string) (*domain.Course, error) {
 	s.log.Println("Get by id courses service")
 
 	usuario, err := s.repo.Get(id)

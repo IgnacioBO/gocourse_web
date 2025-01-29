@@ -7,12 +7,14 @@ import (
 	"time"
 
 	"gorm.io/gorm"
+
+	"github.com/IgnacioBO/gocourse_web/internal/domain"
 )
 
 type Repository interface {
-	Create(c *Course) error                                      //Metodo create y recibe un Puntero de un Course (Struct creado en el de domain.go, que tiene los campso de BBDD en gorn)
-	GetAll(filtros Filtros, offset, limit int) ([]Course, error) //Le agregamos que getAll reciba filtros
-	Get(id string) (*Course, error)
+	Create(c *domain.Course) error                                      //Metodo create y recibe un Puntero de un Course (Struct creado en el de domain.go, que tiene los campso de BBDD en gorn)
+	GetAll(filtros Filtros, offset, limit int) ([]domain.Course, error) //Le agregamos que getAll reciba filtros
+	Get(id string) (*domain.Course, error)
 	Delete(id string) error
 	Update(id string, name *string, startDate, endDate *time.Time) error //Campos por separado y como punteros (porque si no lo pongo puntero, si llega un string vacio TENDRA valor y actualizará VACIO)
 	Count(Filtros Filtros) (int, error)                                  //Servirá para contar cantidad de registrosy recibe los mismo filtros del getall y devolera int(cantidad de registros) y error
@@ -31,7 +33,7 @@ func NewRepo(log *log.Logger, db *gorm.DB) Repository {
 
 }
 
-func (r *repo) Create(course *Course) error {
+func (r *repo) Create(course *domain.Course) error {
 	r.log.Println("repository Create:", course)
 
 	result := r.db.Create(course)
@@ -44,10 +46,10 @@ func (r *repo) Create(course *Course) error {
 	return nil
 }
 
-func (r *repo) GetAll(filtros Filtros, offset, limit int) ([]Course, error) {
+func (r *repo) GetAll(filtros Filtros, offset, limit int) ([]domain.Course, error) {
 	r.log.Println("repository GetAll:")
 
-	var allCourses []Course
+	var allCourses []domain.Course
 
 	tx := r.db.Model(&allCourses)
 	tx = aplicarFiltros(tx, filtros)
@@ -61,10 +63,10 @@ func (r *repo) GetAll(filtros Filtros, offset, limit int) ([]Course, error) {
 	return allCourses, nil
 }
 
-func (r *repo) Get(id string) (*Course, error) {
+func (r *repo) Get(id string) (*domain.Course, error) {
 	r.log.Println("repository Get by id:")
 
-	usuario := Course{ID: id}
+	usuario := domain.Course{ID: id}
 
 	result := r.db.First(&usuario)
 	if result.Error != nil {
@@ -78,7 +80,7 @@ func (r *repo) Get(id string) (*Course, error) {
 func (r *repo) Delete(id string) error {
 	r.log.Println("repository Delete by id:")
 
-	usuario := Course{ID: id}
+	usuario := domain.Course{ID: id}
 
 	result := r.db.Delete(&usuario)
 	if result.Error != nil {
@@ -110,7 +112,7 @@ func (r *repo) Update(id string, name *string, startDate, endDate *time.Time) er
 		valores["end_date"] = *endDate
 	}
 
-	result := r.db.Model(Course{}).Where("id = ?", id).Updates(valores)
+	result := r.db.Model(domain.Course{}).Where("id = ?", id).Updates(valores)
 
 	if result.Error != nil {
 		return result.Error
@@ -138,7 +140,7 @@ func aplicarFiltros(tx *gorm.DB, filtros Filtros) *gorm.DB {
 
 func (r *repo) Count(filtros Filtros) (int, error) {
 	var cantidad int64
-	tx := r.db.Model(Course{})
+	tx := r.db.Model(domain.Course{})
 	tx = aplicarFiltros(tx, filtros)
 	tx = tx.Count(&cantidad)
 	if tx.Error != nil {

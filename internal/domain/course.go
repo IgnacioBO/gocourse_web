@@ -1,4 +1,4 @@
-package course
+package domain
 
 import (
 	"time"
@@ -16,6 +16,13 @@ type Course struct {
 	UpdatedAt *time.Time     `json:"-"`
 	DeletedAt gorm.DeletedAt `json:"-"` //Este campo es para que se haga un SOFTDELETE en vez de un hard delete
 }
+
+//Que pasa si quiero agregar dentro del Struct Course poner un User user.User? Y dentro del struct User poner un course.Course?
+//No nos dejara importar, no podemos importar package b en package a y a la vez importar package a en package b
+//Por eso debemos oensar en PATRONES de DISEÑOS pensado en package.
+//Pensar evitando estos problemas
+//Idealmente mejor generar un package Domain con TODOS LOS DOMINIOS DE nuestra aplicacion
+//ENTONCES COMO User y Course, ambos estan dentro del package domain se pueden llamar una a la otra
 
 func (c *Course) BeforeCreate(tx *gorm.DB) (err error) {
 	if c.ID == "" {
